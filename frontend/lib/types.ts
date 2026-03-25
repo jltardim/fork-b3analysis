@@ -1,7 +1,7 @@
 export interface WsProgress {
   wave?: number;
   agent?: string;
-  status: "pending" | "running" | "completed" | "error" | "done";
+  status: "pending" | "running" | "completed" | "error" | "done" | "keepalive";
   detail?: string;
   total_agents?: number;
   completed_agents?: number;
