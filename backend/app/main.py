@@ -27,3 +27,7 @@ app.include_router(auth.router)
 app.include_router(keys.router)
 app.include_router(profile.router)
 app.include_router(reports.router)
+
+from app.ws.handlers import router as ws_router
+
+app.include_router(ws_router)
