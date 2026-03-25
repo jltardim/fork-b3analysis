@@ -21,10 +21,10 @@ async def save_api_key(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    # Validate key by making a minimal API call
+    # Validate key by making a minimal async API call
     try:
-        client = anthropic.Anthropic(api_key=body.api_key)
-        client.messages.create(
+        client = anthropic.AsyncAnthropic(api_key=body.api_key)
+        await client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=10,
             messages=[{"role": "user", "content": "hi"}],

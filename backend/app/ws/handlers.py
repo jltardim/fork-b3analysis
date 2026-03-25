@@ -2,6 +2,7 @@
 
 import asyncio
 from collections import defaultdict
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -50,8 +51,9 @@ async def _save_report(user_id, result: dict, report_type: str):
         return str(report.id)
 
 
-@router.websocket("/api/ws/analyze")
-async def ws_analyze(websocket: WebSocket):
+@asynccontextmanager
+async def _ws_session(websocket: WebSocket):
+    """Shared context: authenticate, accept, keepalive, semaphore, error handling."""
     user = await authenticate_ws(websocket)
     await websocket.accept()
 
@@ -67,14 +69,7 @@ async def ws_analyze(websocket: WebSocket):
     try:
         sem = _user_semaphores[str(user.id)]
         async with sem:
-            data = await websocket.receive_json()
-            ticker = data.get("ticker", "")
-            date_str = data.get("date")
-
-            orch = await _get_orchestrator(user.id, user.profile)
-            result = await orch.run_analyze(ticker, date_str, ws=websocket)
-            report_id = await _save_report(user.id, result, "analyze")
-            await websocket.send_json({"status": "done", "report_id": report_id, "report": result})
+            yield user
     except WebSocketDisconnect:
         pass
     except Exception as e:
@@ -87,11 +82,22 @@ async def ws_analyze(websocket: WebSocket):
         ping_task.cancel()
 
 
+@router.websocket("/api/ws/analyze")
+async def ws_analyze(websocket: WebSocket):
+    async with _ws_session(websocket) as user:
+        data = await websocket.receive_json()
+        ticker = data.get("ticker", "")
+        date_str = data.get("date")
+
+        orch = await _get_orchestrator(user.id, user.profile)
+        result = await orch.run_analyze(ticker, date_str, ws=websocket)
+        report_id = await _save_report(user.id, result, "analyze")
+        await websocket.send_json({"status": "done", "report_id": report_id, "report": result})
+
+
 @router.websocket("/api/ws/swarm")
 async def ws_swarm(websocket: WebSocket):
-    user = await authenticate_ws(websocket)
-    await websocket.accept()
-    try:
+    async with _ws_session(websocket) as user:
         data = await websocket.receive_json()
         ticker = data.get("ticker", "")
         date_str = data.get("date")
@@ -100,21 +106,11 @@ async def ws_swarm(websocket: WebSocket):
         result = await orch.run_swarm(ticker, date_str, ws=websocket)
         report_id = await _save_report(user.id, result, "swarm")
         await websocket.send_json({"status": "done", "report_id": report_id, "report": result})
-    except WebSocketDisconnect:
-        pass
-    except Exception as e:
-        try:
-            await websocket.send_json({"status": "error", "detail": str(e)})
-        except Exception:
-            pass
-        await websocket.close()
 
 
 @router.websocket("/api/ws/screen")
 async def ws_screen(websocket: WebSocket):
-    user = await authenticate_ws(websocket)
-    await websocket.accept()
-    try:
+    async with _ws_session(websocket) as user:
         data = await websocket.receive_json()
         tickers = data.get("tickers", [])
 
@@ -122,21 +118,11 @@ async def ws_screen(websocket: WebSocket):
         result = await orch.run_screen(tickers, ws=websocket)
         report_id = await _save_report(user.id, result, "screen")
         await websocket.send_json({"status": "done", "report_id": report_id, "report": result})
-    except WebSocketDisconnect:
-        pass
-    except Exception as e:
-        try:
-            await websocket.send_json({"status": "error", "detail": str(e)})
-        except Exception:
-            pass
-        await websocket.close()
 
 
 @router.websocket("/api/ws/portfolio")
 async def ws_portfolio(websocket: WebSocket):
-    user = await authenticate_ws(websocket)
-    await websocket.accept()
-    try:
+    async with _ws_session(websocket) as user:
         data = await websocket.receive_json()
         tickers = data.get("tickers", [])
         capital = data.get("capital", 10000)
@@ -146,21 +132,11 @@ async def ws_portfolio(websocket: WebSocket):
         result = await orch.run_portfolio(tickers, capital, date_str, ws=websocket)
         report_id = await _save_report(user.id, result, "portfolio")
         await websocket.send_json({"status": "done", "report_id": report_id, "report": result})
-    except WebSocketDisconnect:
-        pass
-    except Exception as e:
-        try:
-            await websocket.send_json({"status": "error", "detail": str(e)})
-        except Exception:
-            pass
-        await websocket.close()
 
 
 @router.websocket("/api/ws/macro")
 async def ws_macro(websocket: WebSocket):
-    user = await authenticate_ws(websocket)
-    await websocket.accept()
-    try:
+    async with _ws_session(websocket) as user:
         data = await websocket.receive_json()
         date_str = data.get("date")
 
@@ -168,11 +144,3 @@ async def ws_macro(websocket: WebSocket):
         result = await orch.run_macro(date_str, ws=websocket)
         report_id = await _save_report(user.id, result, "macro")
         await websocket.send_json({"status": "done", "report_id": report_id, "report": result})
-    except WebSocketDisconnect:
-        pass
-    except Exception as e:
-        try:
-            await websocket.send_json({"status": "error", "detail": str(e)})
-        except Exception:
-            pass
-        await websocket.close()

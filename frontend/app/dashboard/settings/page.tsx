@@ -6,8 +6,9 @@ import { backendFetch } from "@/lib/api";
 import { Key, Shield, Zap } from "lucide-react";
 
 interface KeyStatus {
-  has_key: boolean;
+  exists: boolean;
   key_prefix?: string;
+  is_valid: boolean;
 }
 
 const profiles = [
@@ -106,7 +107,7 @@ export default function SettingsPage() {
     try {
       await backendFetch("/api/keys", token, { method: "DELETE" });
       setKeyMessage({ type: "success", text: "Chave removida com sucesso." });
-      setKeyStatus({ has_key: false });
+      setKeyStatus({ exists: false, is_valid: false });
     } catch {
       setKeyMessage({ type: "error", text: "Erro ao remover a chave." });
     } finally {
@@ -147,12 +148,12 @@ export default function SettingsPage() {
         <div className="mb-4 flex items-center gap-2 text-sm">
           <span
             className={`inline-block w-2.5 h-2.5 rounded-full ${
-              loadingKey ? "bg-gray-500" : keyStatus?.has_key ? "bg-green-500" : "bg-red-500"
+              loadingKey ? "bg-gray-500" : keyStatus?.exists ? "bg-green-500" : "bg-red-500"
             }`}
           />
           {loadingKey ? (
             <span className="text-gray-400">Verificando...</span>
-          ) : keyStatus?.has_key ? (
+          ) : keyStatus?.exists ? (
             <span className="text-green-400">
               Chave configurada: <code className="bg-slate-700 px-1.5 py-0.5 rounded text-xs">{keyStatus.key_prefix}</code>
             </span>
@@ -179,7 +180,7 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        {keyStatus?.has_key && (
+        {keyStatus?.exists && (
           <button
             onClick={handleDeleteKey}
             disabled={deletingKey}
