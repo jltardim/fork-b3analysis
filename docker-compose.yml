@@ -10,5 +10,17 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://b3user:b3pass@db:5432/b3analysis
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      FRONTEND_URL: http://localhost:3000
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - db
+
 volumes:
   pgdata:

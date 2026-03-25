@@ -9,7 +9,7 @@ import { Loader2, Play, AlertCircle } from "lucide-react";
 
 export default function AnalyzePage() {
   const { data: session } = useSession();
-  const token = (session as Record<string, unknown>)?.accessToken as string ?? "";
+  const token = ((session as unknown) as Record<string, unknown>)?.accessToken as string ?? "";
   const { start, cancel, progress, result, error, isRunning } = useAnalysis(
     "/api/ws/analyze",
     token,

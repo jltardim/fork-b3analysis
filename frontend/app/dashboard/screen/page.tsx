@@ -35,7 +35,7 @@ const SECTOR_LABELS: Record<string, string> = {
 
 export default function ScreenPage() {
   const { data: session } = useSession();
-  const token = (session as Record<string, unknown>)?.accessToken as string ?? "";
+  const token = ((session as unknown) as Record<string, unknown>)?.accessToken as string ?? "";
   const { start, cancel, progress, result, error, isRunning } = useAnalysis(
     "/api/ws/screen",
     token,
