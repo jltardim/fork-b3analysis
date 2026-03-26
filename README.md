@@ -1,258 +1,272 @@
-# B3Analysis
+# B3Analysis Web
 
 ![B3Analysis](docs/banner.png)
 
-![Agent Swarm](https://img.shields.io/badge/Agent%20Swarm-12%20agentes%20registrados-blueviolet?style=flat-square)
-![Multi-Agent](https://img.shields.io/badge/Multi--Agent-Teams-blue?style=flat-square)
+![Agent Swarm](https://img.shields.io/badge/Agent%20Swarm-12%20agentes-blueviolet?style=flat-square)
+![SaaS](https://img.shields.io/badge/SaaS-BYOK-blue?style=flat-square)
 ![B3 Brasil](https://img.shields.io/badge/B3-%F0%9F%87%A7%F0%9F%87%B7-009c3b?style=flat-square)
-![No API Key](https://img.shields.io/badge/Dados-Sem%20API%20Key-success?style=flat-square)
-![Claude Code](https://img.shields.io/badge/Claude%20Code-claude--sonnet--4--6-orange?style=flat-square)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square)
+![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688?style=flat-square)
 
-Análise de ações brasileiras (B3) com **agent swarm** — equipes de agentes especializados em paralelo usando Claude Code. Sem API keys: todos os dados vêm de fontes públicas (yfinance, BCB, Google News RSS).
-
----
-
-> ⚠️ **Aviso:** Este projeto é para fins exclusivamente **educacionais e de estudo pessoal**. Os relatórios são gerados por agentes de IA e não constituem recomendação de investimento, consultoria financeira ou análise profissional. Renda variável envolve risco de perda do capital investido.
+Plataforma web de análise de ações brasileiras (B3) com **12 agentes de IA** trabalhando em paralelo. Interface moderna, streaming em tempo real, e modelo BYOK (Bring Your Own Key) — o usuário traz sua própria chave da Anthropic.
 
 ---
 
-## Início rápido
-
-```bash
-git clone https://github.com/guhcostan/b3analysis.git
-cd b3analysis
-
-# Descobrir as melhores ações B3 (screening completo ~60 tickers)
-/b3:screen
-
-# Ultra-análise com swarm de 11 agentes (3+7+1)
-/b3:swarm WEGE3.SA
-
-# Análise completa (3 agentes)
-/b3:analyze WEGE3.SA
-
-# Carteira com os aprovados no screening
-/b3:portfolio WEGE3,ITUB3,RADL3 10000
-
-# Snapshot macro
-/b3:macro
-```
-
-O ambiente Python (`.venv`) é criado automaticamente na primeira execução. Nenhum setup manual necessário.
+> **Aviso:** Os relatórios são gerados por agentes de IA para fins exclusivamente **educacionais e de estudo pessoal**. Não constituem recomendação de investimento, consultoria financeira ou análise profissional. Renda variável envolve risco de perda do capital investido.
 
 ---
 
-## Comandos
+## Funcionalidades
 
-| Comando | Exemplo | Descrição |
-|---|---|---|
-| `/b3:screen` | `/b3:screen` ou `/b3:screen --setor bancos` | Screening com os 7 critérios do Logan em ~60 tickers — produz tier list rankeada |
-| `/b3:swarm` | `/b3:swarm WEGE3.SA` | Ultra-análise com 11 agentes em 3 ondas (processo buy-side) |
-| `/b3:analyze` | `/b3:analyze WEGE3.SA 2026-03-24` | Análise completa com técnica, fundamentos e macro |
-| `/b3:portfolio` | `/b3:portfolio WEGE3,ITUB3,RADL3 10000` | Carteira com alocação otimizada por conviction |
-| `/b3:macro` | `/b3:macro` | Painel de indicadores BCB + notícias macro |
-| `/b3:profile` | `/b3:profile quality` | Troca o perfil de qualidade/custo dos agentes |
-
-> **Fluxo recomendado:** `/b3:screen` → identifica candidatos Elite/Bom → `/b3:analyze TICKER` para aprofundar → `/b3:portfolio TICKERS CAPITAL` para alocar.
-
----
-
-## Perfis de análise
-
-Controla qual modelo Claude usa por tipo de agente. Troque com `/b3:profile`.
-
-| Perfil | Síntese | Agentes ticker | Agente macro | Quando usar |
-|---|---|---|---|---|
-| `quality` | claude-opus-4-6 | claude-opus-4-6 | claude-sonnet-4-6 | Decisão real de investimento |
-| `balanced` | claude-sonnet-4-6 | claude-sonnet-4-6 | claude-haiku-4-5 | Padrão — bom equilíbrio |
-| `budget` | claude-sonnet-4-6 | claude-haiku-4-5 | claude-haiku-4-5 | Screening rápido |
-
-Para máxima qualidade na síntese, combine `quality` com `/effort high`.
-
----
-
-## Metodologia
-
-Baseada na tier list B3 do Logan. Os critérios 1, 2 e 3 são **eliminatórios** — a empresa falha em qualquer um e vai direto para EVITAR.
-
-| # | Critério | Eliminatório |
-|---|---|---|
-| 1 | **Lucros crescentes (escadinha)** — padrão consistente, sem prejuízos recorrentes | ✅ Sim |
-| 2 | **ON com liquidez (final 3)** — vol > R$ 10M/dia; só PN/Unit = descartado | ✅ Sim |
-| 3 | **Sem IPO recente** — mínimo 5+ anos de histórico de lucros na B3 | ✅ Sim |
-| 4 | Novo Mercado (maior governança da B3) | Parcial |
-| 5 | Tag Along 100% (proteção ao minoritário) | Parcial |
-| 6 | Dívida controlada (caixa líquido ou D/EBITDA < 2x) | Parcial |
-| 7 | Retorno esperado > CDI (~14,75% a.a.) | Parcial |
-
-### Sinais de alerta
-
-- Ticker final 4/11 sem ON com liquidez — empresa quer capital sem perder controle
-- Controlador com só ON, força investidor a entrar por PN — desalinhamento
-- Tag Along < 100%
-- Interferência estatal forte (risco de dividendos e precificação)
-- D/EBITDA > 3x
-- Setor cíclico de commodity sem histórico multi-décadas consistente
-
----
-
-## Agent Teams & Swarm Architecture
-
-O B3Analysis é construído em 3 camadas de **parallel agent dispatch**:
-
-### Camada 1 — Agentes de dados (coleta paralela)
-
-Cada agente busca uma fonte de dados independente e retorna output bruto:
-
-```
-stock-analyst    → yfinance: OHLCV + técnicos + fundamentos
-macro-analyst    → BCB API: Selic, CDI, IPCA, câmbio, fiscal
-news-analyst     → Google News RSS: notícias PT-BR por ticker/setor
-```
-
-### Camada 2 — Swarm analítico (7 especialistas em paralelo)
-
-O `/b3:swarm` passa os dados brutos para 7 agentes analíticos simultaneamente, cada um com mandato restrito inspirado em papéis reais de gestoras buy-side:
-
-```
-/b3:swarm WEGE3.SA
-       │
-       ├─▶ [stock-analyst]    fetch_stock.py ──────────────┐
-       ├─▶ [macro-analyst]    fetch_macro.py ──────────────┤ RAW DATA
-       └─▶ [news-analyst]     fetch_news.py 30d ───────────┘
-                                                            │
-           ┌────────────────────────────────────────────────▼───────────────────┐
-           │               AGENT SWARM (7 em paralelo)                          │
-           ├──────────────────────────┬─────────────────────────────────────────┤
-           │  business-analyst        │  financial-analyst                      │
-           │  ↳ moat, gestão, setor   │  ↳ escadinha, margens, ROE, FCF         │
-           ├──────────────────────────┼─────────────────────────────────────────┤
-           │  credit-analyst          │  valuation-analyst                      │
-           │  ↳ D/EBITDA, stress test │  ↳ E/P vs CDI, múltiplos, preço-alvo    │
-           ├──────────────────────────┼─────────────────────────────────────────┤
-           │  technical-analyst       │  macro-correlation-analyst              │
-           │  ↳ SMA/RSI/MACD/ADX      │  ↳ Selic/BRL/IPCA impact no setor       │
-           ├──────────────────────────┴─────────────────────────────────────────┤
-           │  governance-analyst                                                 │
-           │  ↳ ON/liquidez (critério 2), tag along, Novo Mercado, risco estatal │
-           └────────────────────────────────────────────────────────────────────┘
-                                                            │
-                                           ▼ Onda 3 (sequencial)
-                                       bear-analyst
-                                       ↳ ataca as 3 hipóteses mais fracas
-                                       ↳ propõe cenário pessimista + preço-alvo bear
-```
-
-### Camada 3 — Devil's advocate + Síntese (modelo principal)
-
-O `bear-analyst` lê os 7 outputs de análise e sistematicamente desafia o bull case antes da síntese. O modelo da sessão principal age como portfolio manager: pesa bull vs bear, verifica os critérios eliminatórios e produz o relatório final em PT-BR com veredicto e gestão de risco.
+| Funcionalidade | Descrição | Agentes |
+|----------------|-----------|---------|
+| **Análise Rápida** | Relatório completo de uma ação (fundamentos, técnico, macro, notícias) | 3 coletores + síntese |
+| **Ultra-Análise Swarm** | Comitê de investimentos com 12 agentes em 4 ondas | 3 dados + 8 analistas + 1 bear + síntese |
+| **Screening B3** | Avalia dezenas de ações e classifica em tiers de qualidade | 1 por ticker + síntese |
+| **Montagem de Carteira** | Carteira diversificada com alocação otimizada | Macro + N tickers + síntese |
+| **Cenário Macro** | Snapshot da economia brasileira (Selic, IPCA, câmbio) | 1 coletor + síntese |
+| **Histórico** | Todas as análises salvas com busca e re-visualização | — |
 
 ---
 
 ## Arquitetura
 
 ```
-.claude/
-    commands/b3/         ← Slash commands /b3:* (orquestração de agent teams)
-        swarm.md         → /b3:swarm — 11 agentes em 3 ondas (flagship)
-        analyze.md       → /b3:analyze — 3 agentes em paralelo (ação + macro + notícias)
-        screen.md        → /b3:screen — screening dos 7 critérios em ~60 tickers
-        portfolio.md     → /b3:portfolio — N+1 agentes (1 por ticker + macro)
-        macro.md         → /b3:macro — Snapshot macroeconômico BCB
-        profile.md       → /b3:profile — Troca o perfil de modelo
-    agents/              ← 12 agentes registrados em 3 tiers
-        [Tier 1 — dados]
-        stock-analyst    → Coleta: OHLCV + técnicos + fundamentos
-        macro-analyst    → Coleta: indicadores BCB
-        news-analyst     → Coleta: notícias PT-BR RSS
-        [Tier 2 — análise especializada, 7 em paralelo]
-        business-analyst        → Moat, gestão, dinâmicas do setor
-        financial-analyst       → Escadinha, margens, ROE, FCF (critérios 1+3)
-        credit-analyst          → D/EBITDA, liquidez, stress test Selic
-        valuation-analyst       → 3 métodos: E/P vs CDI, múltiplos, FCF/DDM
-        technical-analyst       → SMA, RSI, MACD, Bollinger, ADX
-        macro-correlation-analyst → Impacto Selic/BRL/IPCA no setor
-        governance-analyst      → ON/liquidez (critério 2), tag along, Novo Mercado
-        news-sentiment-analyst  → Sentiment score -5 a +5, catalisadores, eventos
-        [Tier 3 — adversarial, sequencial]
-        bear-analyst            → Devil's advocate: ataca hipóteses fracas, bear case
-    hooks/               ← Hooks Claude Code (validação + detecção de erros)
-    skills/b3-analysis/  ← Conhecimento de domínio (checklist, técnicos, setores)
-
-scripts/
-    fetch_stock.py       → OHLCV + técnicos + fundamentos (365 dias)
-    fetch_macro.py       → Indicadores BCB + histórico Selic + notícias macro
-    fetch_news.py        → Notícias PT-BR por ticker + setor (Google News RSS)
-    screen_tickers.py    → Aplica os 7 critérios Logan em arquivos pré-fetched; produz tier list rankeada
-
-dataflows/
-    y_finance.py         → OHLCV, fundamentos, DRE, balanço, fluxo de caixa
-    bcb_data.py          → Selic, CDI, IPCA, IGP-M, câmbio via API pública BCB
-    google_news_br.py    → Notícias financeiras PT-BR via Google News RSS
-    stockstats_utils.py  → RSI, MACD, Bollinger, SMA, ADX, ATR via stockstats
-    config.py            → Cache local em dataflows/data_cache/
+                        Usuário (navegador)
+                              │
+                        ┌─────┴─────┐
+                        │  Next.js  │  Auth (NextAuth), UI, Dashboard
+                        └─────┬─────┘
+                              │ REST + WebSocket
+                        ┌─────┴─────┐
+                        │  FastAPI  │  Orchestrator, Agent Dispatch
+                        └──┬──┬──┬──┘
+                           │  │  │
+                    ┌──────┘  │  └──────┐
+                    ▼         ▼         ▼
+              Claude API  PostgreSQL  Scripts Python
+             (chave do   (usuários,  (yfinance, BCB,
+              usuário)    histórico)  Google News)
 ```
 
-### Fluxo de execução `/b3:analyze`
+### Stack
 
-```
-/b3:analyze WEGE3.SA
-    │
-    ├─▶ [Agente 1] fetch_stock.py WEGE3.SA      ─┐
-    ├─▶ [Agente 2] fetch_macro.py               ─┼─▶ Síntese (modelo principal)
-    └─▶ [Agente 3] fetch_news.py WEGE3.SA 21d   ─┘         │
-                                                             ▼
-                                              Relatório completo em PT-BR
-```
-
-### Fluxo de execução `/b3:portfolio`
-
-```
-/b3:portfolio elite 10000
-    │
-    ├─▶ [Agente macro]   fetch_macro.py          ─┐
-    ├─▶ [Agente WEGE3]   fetch_stock + fetch_news ┤
-    ├─▶ [Agente ITUB3]   fetch_stock + fetch_news ┤
-    ├─▶ [...]            ...                      ┼─▶ Síntese → Alocação final
-    └─▶ [Agente TOTS3]   fetch_stock + fetch_news ─┘
-```
+| Componente | Tecnologia |
+|------------|-----------|
+| Frontend | Next.js 16, TypeScript, Tailwind CSS |
+| Backend | FastAPI, Python 3.10+, SQLAlchemy async |
+| Banco de dados | PostgreSQL 16 |
+| Auth | NextAuth.js (OAuth Google/GitHub + email/senha) |
+| Real-time | WebSocket (streaming de progresso por agente) |
+| Criptografia | AES-256-GCM (chaves API criptografadas em repouso) |
+| Infra local | Docker Compose |
 
 ---
 
-## Fontes de dados
+## Início Rápido
 
-| Fonte | O que fornece | Autenticação |
-|---|---|---|
+### Pré-requisitos
+
+- Docker e Docker Compose
+- Python 3.10+
+- Node.js 18+
+- Chave da Anthropic (https://console.anthropic.com/settings/keys)
+
+### 1. Clonar e subir o banco
+
+```bash
+git clone https://github.com/jltardim/fork-b3analysis.git
+cd fork-b3analysis
+docker compose up -d db
+```
+
+### 2. Configurar e iniciar o backend
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Gerar chaves
+python3 -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(32)).decode())"
+```
+
+Criar `backend/.env`:
+```
+DATABASE_URL=postgresql+asyncpg://b3user:b3pass@localhost:5433/b3analysis
+ENCRYPTION_KEY=<chave gerada acima>
+FRONTEND_URL=http://localhost:3000
+JWT_SECRET=<outra chave gerada>
+```
+
+```bash
+alembic upgrade head
+uvicorn app.main:app --reload --port 8001
+```
+
+### 3. Configurar e iniciar o frontend
+
+```bash
+cd frontend
+npm install
+```
+
+Criar `frontend/.env.local`:
+```
+NEXTAUTH_SECRET=<mesmo valor do JWT_SECRET>
+NEXTAUTH_URL=http://localhost:3000
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8001
+```
+
+```bash
+npm run dev
+```
+
+### 4. Acessar
+
+Abra http://localhost:3000, crie uma conta, configure sua chave API da Anthropic em **Configurações**, e comece a analisar.
+
+---
+
+## Swarm: Como Funciona
+
+O `/swarm` é o recurso principal — simula um comitê de investimentos buy-side com 4 ondas:
+
+```
+/swarm WEGE3
+    │
+    ├─▶ ONDA 1 — Coleta de Dados (3 em paralelo)
+    │   ├── fetch_stock   → OHLCV + técnicos + fundamentos (365 dias)
+    │   ├── fetch_macro   → BCB: Selic, CDI, IPCA, câmbio
+    │   └── fetch_news    → Google News PT-BR (30 dias)
+    │
+    ├─▶ ONDA 2 — 8 Analistas Especializados (em paralelo)
+    │   ├── business-analyst         → moat, gestão, competição
+    │   ├── financial-analyst        → lucros, margens, ROE, FCF
+    │   ├── credit-analyst           → dívida, liquidez, stress test Selic
+    │   ├── valuation-analyst        → 3 métodos de precificação
+    │   ├── technical-analyst        → SMA, RSI, MACD, Bollinger, ADX
+    │   ├── macro-correlation-analyst → impacto Selic/câmbio no setor
+    │   ├── governance-analyst       → Novo Mercado, tag along, risco estatal
+    │   └── news-sentiment-analyst   → sentimento de mercado, catalisadores
+    │
+    ├─▶ ONDA 3 — Bear Analyst (sequencial)
+    │   └── bear-analyst → ataca as 3 hipóteses mais fracas, cenário pessimista
+    │
+    └─▶ ONDA 4 — Síntese (Portfolio Manager)
+        └── synthesis → pesa bull vs bear, veredito final, gestão de risco
+```
+
+O progresso de cada agente é exibido em **tempo real** via WebSocket.
+
+---
+
+## Os 7 Critérios de Qualidade
+
+Baseados na metodologia da tier list B3 do Logan. **Critérios 1-3 são eliminatórios.**
+
+| # | Critério | Eliminatório |
+|---|----------|:---:|
+| 1 | **Lucros crescentes (escadinha)** — sem prejuízos recorrentes | SIM |
+| 2 | **ON com liquidez (final 3)** — volume > R$10M/dia | SIM |
+| 3 | **Sem IPO recente** — mínimo 5 anos de histórico | SIM |
+| 4 | Novo Mercado | Parcial |
+| 5 | Tag Along 100% | Parcial |
+| 6 | Dívida controlada — D/EBITDA < 2x | Parcial |
+| 7 | Retorno esperado > CDI (~14,75% a.a.) | Parcial |
+
+**Score:** 6-7 = Compra forte | 4-5 = Bom | 3 = OK | 0-2 = Evitar
+
+---
+
+## Perfis de Análise
+
+Controla o equilíbrio custo/qualidade. Configurável em **Configurações** no app.
+
+| Perfil | Síntese | Analistas | Macro | Custo Swarm |
+|--------|---------|-----------|-------|-------------|
+| **Quality** | Claude Opus | Claude Opus | Claude Sonnet | ~$2.00 |
+| **Balanced** | Claude Sonnet | Claude Sonnet | Claude Haiku | ~$0.50 |
+| **Budget** | Claude Sonnet | Claude Haiku | Claude Haiku | ~$0.15 |
+
+---
+
+## Modelo de Negócio
+
+**BYOK (Bring Your Own Key)** — o usuário fornece sua própria chave da Anthropic.
+
+- Custo zero de inferência para o operador da plataforma
+- Receita via assinatura mensal pelo acesso à plataforma
+- Chave API criptografada com AES-256-GCM em repouso
+- Usuário paga a Anthropic diretamente pelo uso de IA
+
+---
+
+## Fontes de Dados
+
+Todos os dados vêm de fontes públicas — sem API keys externas necessárias.
+
+| Fonte | Dados | Auth |
+|-------|-------|------|
 | [Yahoo Finance](https://finance.yahoo.com) via `yfinance` | OHLCV, fundamentos, DRE, balanço, fluxo de caixa | Nenhuma |
-| [BCB API aberta](https://dadosabertos.bcb.gov.br) | Selic, CDI, IPCA, IGP-M, câmbio, dívida/PIB | Nenhuma |
+| [BCB API](https://dadosabertos.bcb.gov.br) | Selic, CDI, IPCA, IGP-M, câmbio | Nenhuma |
 | [Google News RSS](https://news.google.com) | Notícias financeiras PT-BR | Nenhuma |
 
 ---
 
-## Dependências
+## Estrutura do Projeto
 
 ```
-yfinance==1.2.0
-stockstats==0.6.8
-pandas==3.0.1
-requests==2.32.5
-python-dateutil==2.9.0.post0
+fork-b3analysis/
+├── backend/                    ← FastAPI
+│   ├── app/
+│   │   ├── main.py            ← App + routers
+│   │   ├── orchestrator.py    ← Orquestração de agentes (core)
+│   │   ├── agents.py          ← Loader de prompts + seleção de modelo
+│   │   ├── agents/*.md        ← Prompts dos 12 agentes + síntese
+│   │   ├── auth.py            ← JWT middleware
+│   │   ├── crypto.py          ← AES-256-GCM para chaves API
+│   │   ├── models.py          ← SQLAlchemy ORM
+│   │   ├── routes/            ← REST endpoints
+│   │   └── ws/                ← WebSocket handlers
+│   ├── scripts/               ← fetch_stock, fetch_macro, fetch_news
+│   ├── dataflows/             ← yfinance, BCB, Google News
+│   └── tests/
+├── frontend/                   ← Next.js
+│   ├── app/
+│   │   ├── dashboard/         ← Todas as páginas do app
+│   │   ├── login/             ← Login (email/senha + OAuth)
+│   │   └── api/auth/          ← NextAuth route
+│   ├── components/            ← AgentCard, SwarmGrid, TickerInput, etc.
+│   └── lib/                   ← API client, hooks, types
+├── docker-compose.yml          ← PostgreSQL + backend
+├── MANUAL_USUARIO.md           ← Guia completo do usuário
+└── ESPINHA_DORSAL.md           ← Documentação técnica do projeto original
 ```
-
-Python 3.10+. Gerenciado automaticamente pelo `run.sh`.
 
 ---
 
-## Contexto macro (atualizar periodicamente)
+## Segurança
 
-- **Selic meta**: ~14,75% a.a. (ciclo de alta, 2025–2026)
-- **CDI** é o benchmark mínimo de retorno para renda variável
-- **IPCA elevado** comprime margens de empresas com custo fixo alto
-- **BRL/USD**: moeda fraca favorece exportadoras; importadoras e endividadas em dólar sofrem
+- Chaves API criptografadas em repouso (AES-256-GCM, nonce único por operação)
+- JWT para autenticação REST e WebSocket
+- Senhas hashadas com PBKDF2-SHA256
+- CORS restrito ao domínio do frontend
+- Limite de 2 análises simultâneas por usuário
+- Validação de input em todos os endpoints
+- Chaves nunca expostas em logs ou mensagens de erro
 
 ---
 
-## Referências e inspirações
+## Documentação
 
-- **[TradingAgents](https://github.com/TauricResearch/TradingAgents)** — arquitetura multi-agente para análise financeira que inspirou o design deste projeto
-- **[Investimentos em Evidência](https://www.youtube.com/@investimentosemevidencia)** — canal do Logan, fonte da metodologia de qualidade B3 (tier list, critérios eliminatórios, escadinha de lucros)
+- **[Manual do Usuário](MANUAL_USUARIO.md)** — Guia completo com boas práticas, fluxo recomendado, e referência de custos
+- **[Espinha Dorsal](ESPINHA_DORSAL.md)** — Documentação técnica do projeto original (CLI)
+
+---
+
+## Referências
+
+- **[TradingAgents](https://github.com/TauricResearch/TradingAgents)** — Arquitetura multi-agente para análise financeira
+- **[Investimentos em Evidência](https://www.youtube.com/@investimentosemevidencia)** — Canal do Logan, fonte da metodologia de qualidade B3
