@@ -6,14 +6,14 @@ services:
       POSTGRES_PASSWORD: b3pass
       POSTGRES_DB: b3analysis
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       DATABASE_URL: postgresql+asyncpg://b3user:b3pass@db:5432/b3analysis
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
