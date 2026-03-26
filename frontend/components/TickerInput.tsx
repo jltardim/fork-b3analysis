@@ -9,24 +9,79 @@ interface TickerInputProps {
   placeholder?: string;
 }
 
+// Lista completa de ações negociadas na B3 (ON, PN e Units)
 const B3_TICKERS = [
-  "ABEV3", "ALPA4", "ARZZ3", "ASAI3", "AZUL4",
-  "B3SA3", "BBAS3", "BBDC4", "BBSE3", "BEEF3",
-  "BPAC11", "BRAP4", "BRFS3", "BRKM5", "CASH3",
-  "CCRO3", "CIEL3", "CMIG4", "CMIN3", "COGN3",
-  "CPFE3", "CPLE6", "CRFB3", "CSAN3", "CSNA3",
-  "CVCB3", "CYRE3", "DXCO3", "EGIE3", "ELET3",
-  "EMBR3", "ENEV3", "ENGI11", "EQTL3", "EZTC3",
-  "FLRY3", "GGBR4", "GOAU4", "GOLL4", "HAPV3",
-  "HYPE3", "IGTI11", "IRBR3", "ITSA4", "ITUB3",
-  "JBSS3", "KLBN11", "LREN3", "LWSA3", "MGLU3",
-  "MRFG3", "MRVE3", "MULT3", "NTCO3", "PCAR3",
-  "PETR4", "PETZ3", "PRIO3", "PSSA3", "QUAL3",
-  "RADL3", "RAIL3", "RAIZ4", "RDOR3", "RENT3",
-  "RRRP3", "SANB11", "SAPR3", "SBSP3", "SLCE3",
-  "SMTO3", "SOMA3", "SUZB3", "TAEE11", "TIMS3",
-  "TOTS3", "UGPA3", "USIM5", "VALE3", "VBBR3",
-  "VIVT3", "WEGE3", "YDUQ3",
+  // A
+  "AALR3", "ABCB4", "ABEV3", "AERI3", "AESB3", "AGRO3", "ALLD3", "ALOS3",
+  "ALPA3", "ALPA4", "ALUP11", "ALUP3", "ALUP4", "AMBP3", "ANIM3", "ARML3",
+  "ARZZ3", "ASAI3", "AURA33", "AZUL4",
+  // B
+  "B3SA3", "BAUH4", "BBAS3", "BBDC3", "BBDC4", "BBSE3", "BEEF3", "BHIA3",
+  "BLAU3", "BMOB3", "BOAS3", "BOBR4", "BPAC11", "BPAC3", "BPAC5", "BPAN4",
+  "BRAP3", "BRAP4", "BRBI11", "BRFS3", "BRKM3", "BRKM5", "BRPR3", "BRSR3",
+  "BRSR6",
+  // C
+  "CAML3", "CASH3", "CBAV3", "CCRO3", "CEAB3", "CEED3", "CEED4", "CEGR3",
+  "CEPE5", "CIEL3", "CLSA3", "CMIG3", "CMIG4", "CMIN3", "COCE5", "COGN3",
+  "CPFE3", "CPLE11", "CPLE3", "CPLE6", "CRFB3", "CSAN3", "CSMG3", "CSNA3",
+  "CSUD3", "CURY3", "CVCB3", "CXSE3", "CYRE3",
+  // D
+  "DASA3", "DESK3", "DEXP3", "DIRR3", "DMMO3", "DMVF3", "DXCO3",
+  // E
+  "ECOR3", "EGIE3", "ELET3", "ELET6", "ELMD3", "EMAE4", "EMBR3", "ENAT3",
+  "ENEV3", "ENGI11", "ENGI3", "ENGI4", "ENJU3", "EQPA3", "EQTL3", "ESPA3",
+  "EVEN3", "EZTC3",
+  // F
+  "FESA3", "FESA4", "FIQE3", "FLRY3", "FRAS3", "FRIO3",
+  // G
+  "GFSA3", "GGBR3", "GGBR4", "GGPS3", "GMAT3", "GOAU3", "GOAU4", "GOLL4",
+  "GPIV33", "GRND3", "GUAR3", "GUAR4",
+  // H
+  "HAPV3", "HBOR3", "HBRE3", "HYPE3",
+  // I
+  "IFCM3", "IGTI11", "IGTI3", "IGTI4", "INTB3", "IRBR3", "ISAE3", "ISAE4",
+  "ITSA3", "ITSA4", "ITUB3", "ITUB4",
+  // J
+  "JALL3", "JBSS3", "JHSF3", "JSLG3",
+  // K
+  "KEPL3", "KLBN11", "KLBN3", "KLBN4",
+  // L
+  "LAND3", "LAVV3", "LEVE3", "LJQQ3", "LOGG3", "LOGN3", "LREN3", "LUPA3",
+  "LWSA3",
+  // M
+  "MATD3", "MBLY3", "MDIA3", "MDNE3", "MEAL3", "MEGA3", "MELK3", "MGLU3",
+  "MILS3", "MLAS3", "MMAQ4", "MNDL3", "MOVI3", "MRFG3", "MRVE3", "MTRE3",
+  "MULT3", "MYPK3",
+  // N
+  "NEOE3", "NGRD3", "NINJ3", "NTCO3", "NUTR3",
+  // O
+  "ODPV3", "OFSA3", "OIBR3", "OIBR4", "ONCO3", "OPCT3", "ORVR3",
+  // P
+  "PARD3", "PCAR3", "PETR3", "PETR4", "PETZ3", "PINE4", "PLPL3", "PMAM3",
+  "PNVL3", "POMO3", "POMO4", "PORT3", "POSI3", "PRIO3", "PRNR3", "PSSA3",
+  "PTBL3", "PTNT4",
+  // Q
+  "QUAL3",
+  // R
+  "RADL3", "RAIL3", "RAIZ4", "RANI3", "RAPT3", "RAPT4", "RCSL3", "RDOR3",
+  "RECV3", "RENT3", "ROMI3", "RPMG3", "RRRP3", "RSID3", "RSUL4",
+  // S
+  "SANB11", "SANB3", "SANB4", "SAPR11", "SAPR3", "SAPR4", "SBFG3", "SBSP3",
+  "SCAR3", "SEQL3", "SEER3", "SHUL4", "SIMH3", "SLCE3", "SMFT3", "SMTO3",
+  "SOMA3", "SQIA3", "STBP3", "SUZB3",
+  // T
+  "TAEE11", "TAEE3", "TAEE4", "TASA3", "TASA4", "TCSA3", "TEND3", "TGMA3",
+  "TIMS3", "TLPP3", "TLPP4", "TOTS3", "TPIS3", "TRAD3", "TRIS3", "TRPL3",
+  "TRPL4", "TTEN3", "TUPY3", "TXRX4",
+  // U
+  "UCAS3", "UGPA3", "UNIP3", "UNIP6", "USIM3", "USIM5",
+  // V
+  "VALE3", "VAMO3", "VBBR3", "VIVA3", "VIVR3", "VIVT3", "VLID3", "VULC3",
+  "VVEO3",
+  // W
+  "WEGE3", "WEST3", "WHRL3", "WHRL4", "WIZC3",
+  // Y-Z
+  "YDUQ3", "ZAMP3",
 ];
 
 export function TickerInput({
